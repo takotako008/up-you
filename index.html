@@ -35,20 +35,30 @@
         .loading-img { width: 120px; height: 120px; animation: loilo-rotate 2s linear infinite; }
         @keyframes loilo-rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .loader-text { margin-top: 25px; color: white; font-size: 14px; letter-spacing: 2px; opacity: 0.6; }
-        #chat-view { display: none; flex-direction: column; height: 100%; }
+        #chat-view { display: none; flex-direction: column; height: 100%; position: relative; }
         .header { padding: 18px 35px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; color: white; }
         .status-online { color: #4ade80; font-size: 13px; display: flex; align-items: center; gap: 6px; }
         .status-dot { width: 8px; height: 8px; background: #4ade80; border-radius: 50%; }
         #chat-log { flex-grow: 1; overflow-y: auto; padding: 40px; display: flex; flex-direction: column; gap: 30px; }
-        .msg { padding: 15px 20px; border-radius: 12px; max-width: 480px; font-size: 16px; position: relative; box-shadow: var(--loilo-card-shadow); word-break: break-all; }
+        .msg { padding: 15px 20px; border-radius: 12px; max-width: 480px; font-size: 16px; position: relative; box-shadow: var(--loilo-card-shadow); word-break: break-all; z-index: 1; }
         .msg-in { align-self: flex-start; background: white; color: #111; }
         .msg-out { align-self: flex-end; background: var(--loilo-blue); color: white; }
-        .sender-tag { position: absolute; top: -22px; left: 5px; font-size: 11px; font-weight: bold; color: #64748b; }
+        .sender-tag { position: absolute; top: -22px; left: 5px; font-size: 11px; font-weight: bold; color: #64748b; white-space: nowrap; }
         .system-tag { align-self: center; background: rgba(255,255,255,0.08); padding: 5px 20px; border-radius: 20px; font-size: 12px; color: #94a3b8; }
-        .input-area { background: var(--loilo-bg); padding: 20px 40px 40px; }
-        .input-inner { display: flex; gap: 15px; max-width: 1100px; margin: 0 auto; }
-        input { flex-grow: 1; background: #1e293b; border: 1px solid #334155; padding: 14px 28px; border-radius: 35px; color: white; outline: none; font-size: 16px; }
-        .btn-send { background: var(--loilo-blue); color: white; border: none; padding: 0 35px; border-radius: 35px; cursor: pointer; font-weight: bold; }
+        .input-area { background: var(--loilo-bg); padding: 15px 40px 30px; border-top: 1px solid rgba(255,255,255,0.05); position: relative; z-index: 2000; }
+        .user-config { max-width: 1100px; margin: 0 auto 12px; display: flex; align-items: center; gap: 10px; }
+        .user-config label { color: #94a3b8; font-size: 12px; font-weight: bold; }
+        #user-name { width: 120px; padding: 6px 12px; font-size: 13px; border-radius: 20px; background: #1e293b; border: 1px solid #334155; color: white; outline: none; }
+        .input-inner { display: flex; gap: 10px; max-width: 1100px; margin: 0 auto; position: relative; align-items: center; }
+        #message-input { flex-grow: 1; background: #1e293b; border: 1px solid #334155; padding: 12px 25px; border-radius: 30px; color: white; outline: none; font-size: 15px; }
+        #gif-btn { background: #334155; color: white; border: none; min-width: 55px; height: 45px; border-radius: 25px; cursor: pointer; font-weight: bold; font-size: 12px; }
+        #send-btn { background: var(--loilo-blue); color: white; border: none; min-width: 80px; height: 45px; border-radius: 25px; cursor: pointer; font-weight: bold; font-size: 15px; }
+        #gif-picker {
+            display: none; position: absolute; bottom: 70px; right: 0; background: #1e293b; 
+            padding: 12px; border-radius: 12px; grid-template-columns: repeat(2, 1fr); gap: 8px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8); z-index: 3000; width: 280px; border: 1px solid #475569;
+        }
+        #gif-picker img { width: 100%; height: 90px; object-fit: cover; border-radius: 6px; cursor: pointer; background: #000; }
         #welcome { margin: auto; color: #475569; font-size: 20px; letter-spacing: 1px; }
     </style>
 </head>
@@ -77,9 +87,15 @@
         </div>
         <div id="chat-log"></div>
         <div class="input-area">
+            <div id="gif-picker"></div>
+            <div class="user-config">
+                <label>Name:</label>
+                <input type="text" id="user-name" placeholder="匿名" maxlength="10">
+            </div>
             <div class="input-inner">
                 <input type="text" id="message-input" placeholder="メッセージを入力..." autocomplete="off">
-                <button class="btn-send" id="send-btn">送信</button>
+                <button id="gif-btn" type="button">GIF</button>
+                <button id="send-btn" type="button">送信</button>
             </div>
         </div>
     </div>
@@ -92,6 +108,16 @@
     let receivedMsgIds = new Set();
     let scanInterval = null;
     const roomList = document.getElementById('room-list');
+
+    const PRESET_GIFS = [
+        "https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExcW1tNGhucXd3cmZqNThzbTdhbzJ0dGI1YmNkMmlkYmQ2bXJoaXlxbSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/NoPNkgzHD8HSK6Nr5l/giphy.gif",
+        "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExeWNrOGxwdGV3aGE0YXZkNnB5a3VpdGh3ZG02dWloMno5OXNtOGpocCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/gnE4FFhtFoLKM/giphy.gif",
+        "https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExdW41dmV1ZW1wa2o5dW9rM3VlYWpwdnVwMjUzY2YzcDR4cW52ZHhpcyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/P53TSsopKicrm/giphy.gif",
+        "https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExajBzcm8zampvOXk5Z3BpeXRsZXQ4dDh2YnljdnAwb2oxdjZoenh4aCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/bpTL6wXRuMQpMIVduB/giphy.gif",
+        "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExNGRraHI1OW9wZGJuejRtcWV2NGd0OGloZThnNThqemtjbzJyYWU5aSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/SDvLBcpgNZjY9RxZbd/giphy.gif",
+        "https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExd3BhYWJ0cHdwb28zdDRyZXk4YXByY3lyanlkcGE2b3YwZGUwdmdwcSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/YdymLnBeyr70rfKqAj/giphy.gif"
+    ];
+
     for(let i=1; i<=13; i++) {
         const div = document.createElement('div');
         div.className = 'room-card';
@@ -100,35 +126,43 @@
         div.onclick = () => selectRoom(i);
         roomList.appendChild(div);
     }
+
     function selectRoom(num) {
         if (activeRoom === num) return;
+        activeRoom = num;
         document.querySelectorAll('.room-card').forEach(c => c.classList.remove('active'));
         document.getElementById(`room-${num}`).classList.add('active');
         document.getElementById('welcome').style.display = 'none';
         document.getElementById('chat-view').style.display = 'none';
         document.getElementById('loader-overlay').style.display = 'flex';
+        
         if (peer) { peer.destroy(); peer = null; }
         if (scanInterval) clearInterval(scanInterval);
         document.getElementById('chat-log').innerHTML = '';
         connections = {};
         receivedMsgIds.clear();
-        activeRoom = num;
-        startPeer(0);
+
+        setTimeout(() => startPeer(0), 500);
     }
+
     function startPeer(index) {
-        myId = `loilo-v2-${activeRoom}-${index}`;
+        myId = `loilo-v5-${activeRoom}-${index}`;
         peer = new Peer(myId, {
             debug: 1,
             config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }] }
         });
-        peer.on('open', (id) => {
-            document.getElementById('loader-overlay').style.display = 'none';
-            document.getElementById('chat-view').style.display = 'flex';
-            document.getElementById('room-num').innerText = activeRoom;
-            appendLog(`Room ${activeRoom} に接続しました`, "system");
-            scanPeers();
-            scanInterval = setInterval(scanPeers, 5000);
+
+        peer.on('open', () => {
+            setTimeout(() => {
+                document.getElementById('loader-overlay').style.display = 'none';
+                document.getElementById('chat-view').style.display = 'flex';
+                document.getElementById('room-num').innerText = activeRoom;
+                appendLog(`Room ${activeRoom} に参加しました`, "system");
+                scanPeers();
+                scanInterval = setInterval(scanPeers, 4000);
+            }, 1000);
         });
+
         peer.on('connection', setupConnection);
         peer.on('error', (err) => {
             if (err.type === 'unavailable-id') {
@@ -136,65 +170,93 @@
             }
         });
     }
+
     function scanPeers() {
         for(let i=0; i<10; i++) {
-            let targetId = `loilo-v2-${activeRoom}-${i}`;
+            let targetId = `loilo-v5-${activeRoom}-${i}`;
             if (targetId !== myId && !connections[targetId]) {
                 setupConnection(peer.connect(targetId));
             }
         }
     }
+
     function setupConnection(conn) {
         if (!conn) return;
         conn.on('open', () => {
-            if (connections[conn.peer]) return;
             connections[conn.peer] = conn;
             updatePeerCount();
         });
         conn.on('data', (data) => {
-            if (data.type === 'chat') {
-                if (receivedMsgIds.has(data.id)) return;
-                receivedMsgIds.add(data.id);
-                appendLog(data.text, "in", data.sender.split('-').pop());
-                broadcast(data);
-            }
+            if (receivedMsgIds.has(data.id)) return;
+            receivedMsgIds.add(data.id);
+            appendLog(data.text, "in", data.userName, data.isGif);
+            broadcast(data);
         });
         conn.on('close', () => { delete connections[conn.peer]; updatePeerCount(); });
-        conn.on('error', () => { delete connections[conn.peer]; updatePeerCount(); });
     }
+
     function sendMessage() {
         const input = document.getElementById('message-input');
         const text = input.value.trim();
-        if (!text || !myId) return;
-        const data = { type: 'chat', id: myId + Date.now(), sender: myId, text: text };
+        const name = document.getElementById('user-name').value.trim() || "匿名";
+        if (!text) return;
+        const data = { type: 'chat', id: myId + Date.now(), userName: name, text: text, isGif: false };
         receivedMsgIds.add(data.id);
-        appendLog(text, "out");
+        appendLog(text, "out", name, false);
         broadcast(data);
         input.value = "";
     }
-    function broadcast(data) {
-        Object.values(connections).forEach(conn => { if (conn.open) conn.send(data); });
+
+    function sendGif(url) {
+        const name = document.getElementById('user-name').value.trim() || "匿名";
+        const data = { type: 'chat', id: myId + Date.now(), userName: name, text: url, isGif: true };
+        receivedMsgIds.add(data.id);
+        appendLog(url, "out", name, true);
+        broadcast(data);
     }
-    function appendLog(text, type, sender = "") {
+
+    function broadcast(data) {
+        Object.values(connections).forEach(c => { if (c.open) c.send(data); });
+    }
+
+    function appendLog(text, type, sender = "", isGif = false) {
         const log = document.getElementById('chat-log');
         const div = document.createElement('div');
-        if (type === 'system') {
+        div.className = `msg msg-${type}`;
+        const label = sender ? `<span class="sender-tag">${sender}</span>` : '';
+        if (isGif) {
+            div.innerHTML = label + `<img src="${text}" style="width:100%; border-radius:8px; display:block;">`;
+        } else if (type === 'system') {
             div.className = 'system-tag';
             div.innerText = text;
         } else {
-            div.className = `msg msg-${type}`;
-            const label = sender ? `<span class="sender-tag">User ${sender}</span>` : '';
             div.innerHTML = label + escapeHtml(text);
         }
         log.appendChild(div);
         log.scrollTop = log.scrollHeight;
     }
+
     function updatePeerCount() {
         document.getElementById('peer-count').innerText = `(${Object.keys(connections).length + 1})`;
     }
+
     function escapeHtml(str) {
         return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
     }
+
+    document.getElementById('gif-btn').onclick = () => {
+        const p = document.getElementById('gif-picker');
+        p.style.display = p.style.display === 'grid' ? 'none' : 'grid';
+        if (p.style.display === 'grid') {
+            p.innerHTML = '';
+            PRESET_GIFS.forEach(url => {
+                const img = document.createElement('img');
+                img.src = url;
+                img.onclick = () => { sendGif(url); p.style.display = 'none'; };
+                p.appendChild(img);
+            });
+        }
+    };
     document.getElementById('send-btn').onclick = sendMessage;
     document.getElementById('message-input').onkeypress = (e) => { if(e.key === 'Enter') sendMessage(); };
 </script>
