@@ -90,6 +90,7 @@
     let activeRoom = null;
     let connections = {};
     let receivedMsgIds = new Set();
+    let scanInterval = null;
     const roomList = document.getElementById('room-list');
     for(let i=1; i<=13; i++) {
         const div = document.createElement('div');
@@ -107,42 +108,48 @@
         document.getElementById('chat-view').style.display = 'none';
         document.getElementById('loader-overlay').style.display = 'flex';
         if (peer) { peer.destroy(); peer = null; }
+        if (scanInterval) clearInterval(scanInterval);
         document.getElementById('chat-log').innerHTML = '';
         connections = {};
         receivedMsgIds.clear();
         activeRoom = num;
-        startPeer();
+        startPeer(0);
     }
-    function startPeer() {
-        const randomId = Math.random().toString(36).substring(2, 10);
-        myId = `ln-${activeRoom}-${randomId}`;
+    function startPeer(index) {
+        myId = `loilo-v2-${activeRoom}-${index}`;
         peer = new Peer(myId, {
             debug: 1,
-            config: {
-                'iceServers': [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' },
-                    { urls: 'stun:stun2.l.google.com:19302' }
-                ]
-            }
+            config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }] }
         });
         peer.on('open', (id) => {
             document.getElementById('loader-overlay').style.display = 'none';
             document.getElementById('chat-view').style.display = 'flex';
             document.getElementById('room-num').innerText = activeRoom;
             appendLog(`Room ${activeRoom} に接続しました`, "system");
+            scanPeers();
+            scanInterval = setInterval(scanPeers, 5000);
         });
         peer.on('connection', setupConnection);
         peer.on('error', (err) => {
-            if (err.type === 'unavailable-id') startPeer();
+            if (err.type === 'unavailable-id') {
+                startPeer(index + 1);
+            }
         });
     }
+    function scanPeers() {
+        for(let i=0; i<10; i++) {
+            let targetId = `loilo-v2-${activeRoom}-${i}`;
+            if (targetId !== myId && !connections[targetId]) {
+                setupConnection(peer.connect(targetId));
+            }
+        }
+    }
     function setupConnection(conn) {
-        if (connections[conn.peer]) return;
+        if (!conn) return;
         conn.on('open', () => {
+            if (connections[conn.peer]) return;
             connections[conn.peer] = conn;
             updatePeerCount();
-            conn.send({ type: 'sync', list: Object.keys(connections) });
         });
         conn.on('data', (data) => {
             if (data.type === 'chat') {
@@ -150,10 +157,6 @@
                 receivedMsgIds.add(data.id);
                 appendLog(data.text, "in", data.sender.split('-').pop());
                 broadcast(data);
-            } else if (data.type === 'sync') {
-                data.list.forEach(pid => {
-                    if (pid !== myId && !connections[pid]) setupConnection(peer.connect(pid));
-                });
             }
         });
         conn.on('close', () => { delete connections[conn.peer]; updatePeerCount(); });
