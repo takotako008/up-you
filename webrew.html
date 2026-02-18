@@ -24,6 +24,22 @@
         .room-card { background: rgba(255,255,255,0.08); border-radius: 12px; margin-bottom: 12px; padding: 15px; cursor: pointer; border: 1px solid transparent; transition: 0.3s; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
         .room-card.active { border-color: var(--sea-bright); background: rgba(0, 204, 255, 0.15); box-shadow: var(--neon-glow); }
         
+        /* たこ占いバナーのスタイル */
+        .tako-ad {
+            background: #FFF4D1;
+            margin: 15px;
+            padding: 12px;
+            border-radius: 12px;
+            text-decoration: none;
+            color: #333;
+            text-align: center;
+            display: block;
+            transition: transform 0.2s;
+        }
+        .tako-ad:hover { transform: scale(1.03); }
+        .tako-ad b { display: block; font-size: 18px; color: #e67e22; }
+        .tako-ad span { font-size: 12px; font-weight: bold; }
+
         .canvas { flex: 1; display: flex; flex-direction: column; height: 100vh; position: relative; }
         #welcome { margin: auto; text-align: center; color: var(--sea-bright); text-shadow: var(--neon-glow); }
         
@@ -70,6 +86,11 @@
 <div class="sidebar" onclick="event.stopPropagation()">
     <div class="sidebar-header">Webrew Channel</div>
     <div id="room-list" class="room-list"></div>
+    
+    <a href="https://sinriuranai.jimdofree.com/%E5%89%8D%E4%B8%96%E3%81%AE%E5%8B%95%E7%89%A9%E8%A8%BA%E6%96%AD-%E9%AD%82%E3%81%AE%E3%83%AB%E3%83%BC%E3%83%84%E3%82%92%E7%84%A1%E6%96%99%E9%91%91%E5%AE%9A-%E3%81%9F%E3%81%93%E8%A8%BA%E6%96%AD/" target="_blank" class="tako-ad">
+        <b>たこ占い🐙</b>
+        <span>自分の前世を知る</span>
+    </a>
 </div>
 <div class="canvas">
     <div id="welcome"><h2>Made by tako</h2><p>Select a Channel</p></div>
@@ -293,5 +314,4 @@
     document.getElementById('message-input').onkeypress = (e) => { if(e.key === 'Enter') sendMessage(); };
 </script>
 </body>
-
 </html>
