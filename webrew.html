@@ -9,84 +9,47 @@
         :root { --sea-bright: #00ccff; --glass-border: rgba(255, 255, 255, 0.2); --neon-glow: 0 0 15px var(--sea-bright); }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html, body { height: 100%; width: 100%; overflow: hidden; font-family: "Hiragino Maru Gothic ProN", sans-serif; background: radial-gradient(circle at center, #001e3d 0%, #000810 100%); color: white; display: flex; }
-        .sidebar { width: 300px; min-width: 300px; background: rgba(0, 5, 15, 0.85); backdrop-filter: blur(25px); border-right: 1px solid var(--glass-border); display: flex; flex-direction: column; z-index: 100; }
-        
-        /* ロゴ周りの修正 */
-        .sidebar-header { 
-            padding: 30px 20px; 
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .sidebar-logo {
-            max-width: 85%;
-            height: auto;
-            max-height: 70px;
-            filter: drop-shadow(0 0 8px rgba(0, 204, 255, 0.5));
-            animation: logo-pulse 2.5s ease-in-out infinite alternate;
-        }
-        @keyframes logo-pulse {
-            from { filter: drop-shadow(0 0 5px rgba(0, 204, 255, 0.4)); transform: scale(1); }
-            to { filter: drop-shadow(0 0 15px rgba(0, 204, 255, 0.9)); transform: scale(1.02); }
-        }
-
-        .room-list { flex-grow: 1; padding: 15px; overflow-y: auto; }
+        .sidebar { width: 300px; min-width: 300px; height: 100vh; background: rgba(0, 5, 15, 0.85); backdrop-filter: blur(25px); border-right: 1px solid var(--glass-border); display: flex; flex-direction: column; z-index: 100; }
+        .sidebar-header { padding: 20px 0; display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
+        .sidebar-logo { width: 220px; height: auto; display: block; filter: drop-shadow(0 0 8px rgba(0, 204, 255, 0.5)); animation: logo-pulse 2.5s ease-in-out infinite alternate; }
+        @keyframes logo-pulse { from { filter: drop-shadow(0 0 5px rgba(0, 204, 255, 0.4)); transform: scale(1); } to { filter: drop-shadow(0 0 15px rgba(0, 204, 255, 0.9)); transform: scale(1.02); } }
+        .room-list { flex-grow: 1; min-height: 0; padding: 15px; overflow-y: auto; }
+        .room-list::-webkit-scrollbar { width: 5px; }
+        .room-list::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 10px; }
         .room-card { background: rgba(255,255,255,0.08); border-radius: 12px; margin-bottom: 12px; padding: 15px; cursor: pointer; border: 1px solid transparent; transition: 0.3s; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
         .room-card.active { border-color: var(--sea-bright); background: rgba(0, 204, 255, 0.15); box-shadow: var(--neon-glow); }
-        
-        .tako-ad {
-            background: #FFF4D1;
-            margin: 15px;
-            padding: 12px;
-            border-radius: 12px;
-            text-decoration: none;
-            color: #333;
-            text-align: center;
-            display: block;
-            transition: transform 0.2s;
-        }
+        .tako-ad { flex-shrink: 0; background: #FFF4D1; margin: 15px; padding: 12px; border-radius: 12px; text-decoration: none; color: #333; text-align: center; display: block; transition: transform 0.2s; }
         .tako-ad:hover { transform: scale(1.03); }
         .tako-ad b { display: block; font-size: 18px; color: #e67e22; }
         .tako-ad span { font-size: 12px; font-weight: bold; }
-
         .canvas { flex: 1; display: flex; flex-direction: column; height: 100vh; position: relative; }
         #welcome { margin: auto; text-align: center; color: var(--sea-bright); text-shadow: var(--neon-glow); }
-        
         #loading-overlay { display: none; position: absolute; inset: 0; background: rgba(0, 8, 16, 0.9); z-index: 500; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
         .spinner { width: 50px; height: 50px; border: 3px solid rgba(0, 204, 255, 0.1); border-top-color: var(--sea-bright); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { to { transform: rotate(360deg); } }
-
         #chat-view { display: none; flex-direction: column; height: 100%; width: 100%; padding: 20px; }
         #chat-window { width: 100%; height: 100%; display: flex; flex-direction: column; background: rgba(0, 20, 40, 0.4); border-radius: 20px; border: 1px solid var(--glass-border); backdrop-filter: blur(30px); overflow: hidden; position: relative; }
         #chat-log { flex-grow: 1; overflow-y: auto; padding: 25px; display: flex; flex-direction: column; gap: 20px; }
-        
         .msg { padding: 14px 20px; border-radius: 20px; max-width: 80%; font-size: 16px; border: 1px solid rgba(255,255,255,0.1); line-height: 1.5; word-break: break-all; position: relative; }
         .msg-in { align-self: flex-start; background: rgba(255,255,255,0.06); margin-top: 15px; }
         .msg-out { align-self: flex-end; background: linear-gradient(180deg, #00ccff, #0044aa); border: none; box-shadow: 0 5px 15px rgba(0, 204, 255, 0.3); margin-top: 15px; }
-        
         .user-label { position: absolute; top: -22px; font-weight: 900; font-size: 14px; white-space: nowrap; }
         .msg-in .user-label { left: 5px; color: var(--sea-bright); }
         .msg-out .user-label { right: 5px; color: #fff; text-shadow: 0 0 5px rgba(0,0,0,0.5); }
-
         .admin-msg { border: 2px solid transparent !important; background-image: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), linear-gradient(90deg, #ff0000, #ff00ff, #00ffff, #00ff00, #ffff00, #ff0000) !important; background-origin: border-box !important; background-clip: padding-box, border-box !important; background-size: 200% 100% !important; animation: rainbow-border 3s linear infinite !important; }
         @keyframes rainbow-border { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
-
         .input-area { padding: 20px; background: rgba(0,0,0,0.3); display: flex; gap: 10px; border-top: 1px solid var(--glass-border); align-items: center; }
         #message-input { flex-grow: 1; border: 1px solid var(--glass-border); border-radius: 25px; padding: 12px 20px; background: rgba(255, 255, 255, 0.1); color: white; outline: none; }
-        
         .action-btn { width: 40px; height: 40px; min-width: 40px; border-radius: 50%; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; }
         .send-btn { border: none; border-radius: 25px; padding: 0 20px; height: 40px; cursor: pointer; font-weight: bold; background: var(--sea-bright); color: #000; }
-
         .picker { display: none; position: absolute; bottom: 85px; right: 20px; width: 300px; height: 400px; background: #0a0f1e; border: 1px solid var(--sea-bright); border-radius: 15px; z-index: 1000; flex-direction: column; }
         .picker-content { flex: 1; overflow-y: auto; padding: 10px; }
-        
         #admin-panel { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 500px; background: rgba(0, 15, 30, 0.98); border: 2px solid var(--sea-bright); padding: 30px; border-radius: 25px; z-index: 2000; box-shadow: 0 0 50px rgba(0,0,0,0.8); }
         #admin-panel textarea { width: 100%; height: 200px; margin-top: 15px; background: #000; color: #0f0; border: 1px solid var(--glass-border); border-radius: 10px; padding: 10px; font-family: monospace; outline: none; }
         .admin-actions { display: flex; gap: 10px; margin-top: 15px; }
         .admin-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; cursor: pointer; font-weight: bold; transition: 0.2s; }
         .btn-broadcast { background: var(--sea-bright); color: #000; }
         .btn-close { background: #333; color: #fff; }
-
         .embed-container { margin-top: 5px; border-radius: 12px; overflow: hidden; background: #000; width: fit-content; max-width: 100%; }
         .embed-container img { display: block; max-width: 100%; max-height: 300px; }
     </style>
@@ -97,7 +60,6 @@
         <img src="webrew.svg" alt="Webrew Logo" class="sidebar-logo">
     </div>
     <div id="room-list" class="room-list"></div>
-    
     <a href="https://sinriuranai.jimdofree.com/%E5%89%8D%E4%B8%96%E3%81%AE%E5%8B%95%E7%89%A9%E8%A8%BA%E6%96%AD-%E9%AD%82%E3%81%AE%E3%83%AB%E3%83%BC%E3%83%84%E3%82%92%E7%84%A1%E6%96%99%E9%91%91%E5%AE%9A-%E3%81%9F%E3%81%93%E8%A8%BA%E6%96%AD/" target="_blank" class="tako-ad">
         <b>たこ占い🐙</b>
         <span>自分の前世を知る</span>
@@ -112,16 +74,13 @@
     <div id="chat-view">
         <div id="chat-window">
             <div id="chat-log" onclick="closeAllPickers()"></div>
-            
             <div id="gif-picker" class="picker" onclick="event.stopPropagation()">
                 <div style="padding:10px;"><input type="text" id="gif-search" placeholder="GIF検索..." style="width:100%; padding:8px; background:#000; color:#fff; border:1px solid #333;" oninput="searchGiphy(this.value)"></div>
                 <div id="gif-results" class="picker-content" style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;"></div>
             </div>
-            
             <div id="emoji-picker" class="picker" onclick="event.stopPropagation()">
                 <div id="emoji-grid" class="picker-content" style="display:grid; grid-template-columns: repeat(6, 1fr); gap: 5px; font-size: 24px; text-align: center;"></div>
             </div>
-
             <div class="input-area" onclick="event.stopPropagation()">
                 <input type="file" id="file-input" style="display:none" onchange="handleFileUpload(this)">
                 <button class="action-btn" onclick="document.getElementById('file-input').click()">+</button>
@@ -134,7 +93,6 @@
         </div>
     </div>
 </div>
-
 <div id="admin-panel">
     <h3 style="color: var(--sea-bright); text-shadow: var(--neon-glow);">👑 Admin Panel</h3>
     <textarea id="css-payload" placeholder="/* CSSを入力 */"></textarea>
@@ -143,13 +101,11 @@
         <button class="admin-btn btn-close" onclick="closeAdmin()">Close</button>
     </div>
 </div>
-
 <script>
     const VERSION = "v29-admin-fix";
     const GIPHY_KEY = "EklHeiogDlScrXfvcsHV9SpCXT58QOE3";
     const ADMIN_HASH_REAL = "27384921709473e2324347018b98c98ff8ee5d9433702e75a8e2b6cda728e51a";
     let activeRoom = null, peer = null, myId = "", connections = {}, receivedIds = new Set(), isAdmin = false;
-
     for(let i=1; i<=10; i++) {
         const d = document.createElement('div');
         d.className = 'room-card'; d.id = `card-${i}`;
@@ -157,24 +113,20 @@
         d.onclick = () => selectRoom(i);
         document.getElementById('room-list').appendChild(d);
     }
-
     const eGrid = document.getElementById('emoji-grid');
     for(let i=0x1F600; i<=0x1F64F; i++) {
         const s = document.createElement('span'); s.style.cursor="pointer"; s.innerText = String.fromCodePoint(i);
         s.onclick = () => { document.getElementById('message-input').value += s.innerText; };
         eGrid.appendChild(s);
     }
-
     async function sha256(m) {
         const b = new TextEncoder().encode(m);
         const h = await crypto.subtle.digest('SHA-256', b);
         return Array.from(new Uint8Array(h)).map(x => x.toString(16).padStart(2, '0')).join('');
     }
-
     let keys = {};
     window.addEventListener('keydown', async (e) => {
         if (e.key === "Escape") closeAdmin();
-        
         keys[e.key.toUpperCase()] = true;
         if (keys['SHIFT'] && keys['Z'] && keys['C']) {
             keys = {};
@@ -186,11 +138,7 @@
         }
     });
     window.addEventListener('keyup', (e) => { keys[e.key.toUpperCase()] = false; });
-
-    function closeAdmin() {
-        document.getElementById('admin-panel').style.display = 'none';
-    }
-
+    function closeAdmin() { document.getElementById('admin-panel').style.display = 'none'; }
     function broadcastCSS() {
         const css = document.getElementById('css-payload').value;
         if (!css) return;
@@ -198,7 +146,6 @@
         applyDesign(css); broadcast(d);
     }
     function applyDesign(css) { document.getElementById('dynamic-style').innerHTML = css; }
-
     async function selectRoom(num) {
         if(activeRoom === num) return;
         activeRoom = num;
@@ -207,13 +154,11 @@
         document.getElementById('welcome').style.display = 'none';
         document.getElementById('chat-view').style.display = 'flex';
         document.getElementById('loading-overlay').style.display = 'flex';
-        
         if (peer) peer.destroy();
         connections = {}; receivedIds.clear();
         document.getElementById('chat-log').innerHTML = '';
         startPeer(0);
     }
-
     function startPeer(idx) {
         myId = `loilo-${VERSION}-${activeRoom}-${idx}`;
         peer = new Peer(myId, { config: {'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }]} });
@@ -225,7 +170,6 @@
         peer.on('connection', setupConn);
         peer.on('error', (e) => { if (e.type === 'unavailable-id') startPeer(idx + 1); });
     }
-
     function scanPeers() {
         if (!peer || peer.destroyed) return;
         for(let i=0; i<5; i++) {
@@ -233,7 +177,6 @@
             if (tid !== myId && !connections[tid]) setupConn(peer.connect(tid));
         }
     }
-
     function setupConn(c) {
         if (!c) return;
         c.on('open', () => { connections[c.peer] = c; });
@@ -246,7 +189,6 @@
         });
         c.on('close', () => delete connections[c.peer]);
     }
-
     function handleFileUpload(input) {
         const file = input.files[0];
         if (!file) return;
@@ -260,7 +202,6 @@
         };
         reader.readAsDataURL(file);
     }
-
     function sendMessage() {
         const inp = document.getElementById('message-input');
         if (!inp.value.trim()) return;
@@ -271,14 +212,11 @@
         broadcast(data);
         inp.value = "";
     }
-
     function broadcast(d) { Object.values(connections).forEach(c => { if (c.open) c.send(d); }); }
-
     function appendLog(t, type, s, role, img) {
         const log = document.getElementById('chat-log');
         const div = document.createElement('div');
         div.className = `msg msg-${type} ${role === 'admin' ? 'admin-msg' : ''}`;
-        
         let mediaHtml = "";
         if (img) mediaHtml = `<div class="embed-container"><img src="${img}"></div>`;
         else if (t) {
@@ -286,14 +224,11 @@
             if (t.match(/\.(jpeg|jpg|gif|png|webp)$/i) || t.includes("tenor.com")) mediaHtml = `<div class="embed-container"><img src="${t}"></div>`;
             else if (ytM) mediaHtml = `<div class="embed-container"><iframe width="100%" height="200" src="https://www.youtube.com/embed/${ytM[1]}" frameborder="0" allowfullscreen></iframe></div>`;
         }
-
         const nameLabel = `<span class="user-label">${role === 'admin' ? '👑 ' : ''}${s}</span>`;
         div.innerHTML = `${nameLabel}${t ? escape(t) : ''}${mediaHtml}`;
-        
         log.appendChild(div);
         log.scrollTop = log.scrollHeight;
     }
-
     function escape(s) { return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
     function togglePicker(id, e) {
         const p = document.getElementById(id);
@@ -303,7 +238,6 @@
         if(id === 'gif-picker') searchGiphy("");
     }
     function closeAllPickers() { document.querySelectorAll('.picker').forEach(p => p.style.display = 'none'); }
-    
     async function searchGiphy(q) {
         const url = q ? `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_KEY}&q=${encodeURIComponent(q)}&limit=12` : `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_KEY}&limit=12`;
         const res = await fetch(url);
