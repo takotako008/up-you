@@ -12,28 +12,28 @@
         .sidebar { width: 300px; min-width: 300px; height: 100vh; background: rgba(0, 5, 15, 0.85); backdrop-filter: blur(25px); border-right: 1px solid var(--glass-border); display: flex; flex-direction: column; z-index: 100; }
         .sidebar-header { 
             width: 100%; 
-            height: 60px;
+            height: 70px;
             display: flex; 
             justify-content: center; 
             align-items: center; 
             flex-shrink: 0;
             overflow: hidden;
-            background: rgba(0, 204, 255, 0.05);
+            position: relative;
         }
         .sidebar-logo { 
-            width: 100%; 
+            width: 100%;
             height: 100%;
             object-fit: contain;
-            transform: scale(4.5);
+            transform: scale(8.5);
             display: block; 
-            filter: drop-shadow(0 0 10px rgba(0, 204, 255, 0.8)); 
+            filter: drop-shadow(0 0 12px rgba(0, 204, 255, 0.9)); 
             animation: logo-pulse 2s ease-in-out infinite alternate; 
         }
         @keyframes logo-pulse { 
-            from { transform: scale(3.5); } 
-            to { transform: scale(3.7); } 
+            from { transform: scale(8.5); } 
+            to { transform: scale(8.8); } 
         }
-        .room-list { flex-grow: 1; min-height: 0; padding: 10px 15px; overflow-y: auto; }
+        .room-list { flex-grow: 1; min-height: 0; padding: 5px 15px; overflow-y: auto; }
         .room-list::-webkit-scrollbar { width: 5px; }
         .room-list::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 10px; }
         .room-card { background: rgba(255,255,255,0.08); border-radius: 12px; margin-bottom: 12px; padding: 15px; cursor: pointer; border: 1px solid transparent; transition: 0.3s; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
@@ -280,4 +280,3 @@
 </script>
 </body>
 </html>
-
