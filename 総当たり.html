@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern URL Hunter</title>
+    <style>
+        :root {
+            --primary: #00f2ff;
+            --accent: #bc13fe;
+            --bg-glass: rgba(13, 17, 23, 0.7);
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: white;
+        }
+
+        #video-bg {
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            min-width: 100%;
+            min-height: 100%;
+            z-index: -1;
+            object-fit: cover;
+            filter: brightness(0.4) contrast(1.2);
+        }
+
+        .glass-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 550px;
+            background: var(--bg-glass);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+            letter-spacing: 2px;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        h5 {
+            margin-bottom: 25px;
+            color: #aaa;
+            font-weight: normal;
+        }
+
+        .input-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+        }
+
+        .field label {
+            font-size: 0.7rem;
+            color: #888;
+            margin-bottom: 5px;
+            padding-left: 5px;
+            white-space: nowrap;
+        }
+
+        input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: white;
+            padding: 10px;
+            font-size: 1rem;
+            transition: 0.3s;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        #btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(45deg, var(--primary), var(--accent));
+            color: white;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(0, 242, 255, 0.3);
+        }
+
+        #btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(188, 19, 254, 0.4);
+        }
+
+        #btn:disabled {
+            filter: grayscale(1);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #status {
+            margin: 20px 0;
+            font-size: 1rem;
+            color: var(--primary);
+            text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+            font-family: monospace;
+        }
+
+        #log {
+            margin-top: 20px;
+            height: 120px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 0.75rem;
+            text-align: left;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            color: #888;
+            font-family: monospace;
+        }
+
+        #log::-webkit-scrollbar { width: 4px; }
+        #log::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <video autoplay muted loop id="video-bg">
+        <source src="https://takotako008.github.io/up-you/3AH4CxFJJ6xDL3I1zkyUTH8vkc.mp4" type="video/mp4">
+    </video>
+
+    <div class="glass-panel">
+        <h1>LUCKY URL</h1>
+        <h5>完全ランダムなURLを生成します</h5>
+        
+        <div class="input-group">
+            <div class="field">
+                <label>最小URL文字数(3がおすすめ)</label>
+                <input type="number" id="minLen" value="3" min="1">
+            </div>
+            <div class="field">
+                <label>最大URL文字数</label>
+                <input type="number" id="maxLen" value="6" min="1">
+            </div>
+            <div class="field">
+                <label>並列処理数(上げすぎると固まる)</label>
+                <input type="number" id="concurrency" value="12" min="1" max="100">
+            </div>
+        </div>
+
+        <button id="btn" onclick="startHunting()">生成を開始する</button>
+
+        <div id="status">自己責任ナリよ</div>
+        
+        <div id="log"></div>
+    </div>
+
+    <script>
+        const tlds = ['.com', '.xyz', '.men', '.click', '.info', '.cn'];
+        let isRunning = false;
+
+        function addLog(msg) {
+            const log = document.getElementById('log');
+            const div = document.createElement('div');
+            div.textContent = `> ${msg}`;
+            log.prepend(div);
+            if (log.children.length > 50) log.removeChild(log.lastChild);
+        }
+
+        function generateRandomName(length) {
+            const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+            let res = '';
+            for (let i = 0; i < length; i++) res += chars[Math.floor(Math.random() * chars.length)];
+            return res;
+        }
+
+        function checkURL(url) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                const timeout = setTimeout(() => { 
+                    img.src = ""; 
+                    resolve(false); 
+                }, 2500);
+
+                img.onload = () => { 
+                    clearTimeout(timeout); 
+                    resolve(true); 
+                };
+                img.onerror = () => { 
+                    clearTimeout(timeout); 
+                    resolve(false); 
+                };
+                img.src = `${url}/favicon.ico?v=${Math.random()}`;
+            });
+        }
+
+        async function startHunting() {
+            if (isRunning) return;
+            
+            const btn = document.getElementById('btn');
+            const status = document.getElementById('status');
+            const minLen = parseInt(document.getElementById('minLen').value);
+            const maxLen = parseInt(document.getElementById('maxLen').value);
+            const concurrency = parseInt(document.getElementById('concurrency').value) || 12;
+            
+            isRunning = true;
+            btn.disabled = true;
+            let currentLen = minLen;
+            let totalAttempts = 0;
+
+            addLog(`探索開始 (スレッド数: ${concurrency})`);
+
+            while (isRunning) {
+                status.innerText = `${currentLen}  アクセス可能なURLをスキャン中 (並列数: ${concurrency})...`;
+                
+                const batch = [];
+                for (let i = 0; i < concurrency; i++) {
+                    const url = `https://${generateRandomName(currentLen)}${tlds[Math.floor(Math.random()*tlds.length)]}`;
+                    batch.push({ url, promise: checkURL(url) });
+                }
+
+                const results = await Promise.all(batch.map(b => b.promise));
+                totalAttempts += concurrency;
+
+                for (let i = 0; i < results.length; i++) {
+                    if (results[i]) {
+                        status.innerText = "URLが見つかりました！";
+                        status.style.color = "#ff00ff";
+                        addLog(`SUCCESS: ${batch[i].url}`);
+                        window.open(batch[i].url, '_blank');
+                        isRunning = false;
+                        btn.disabled = false;
+                        return;
+                    }
+                    addLog(`FAIL: ${batch[i].url}`);
+                }
+
+                if (totalAttempts % (concurrency * 10) === 0 && currentLen < maxLen) {
+                    currentLen++;
+                }
+
+                await new Promise(r => setTimeout(r, 1919114514810));
+            }
+        }
+    </script>
+</body>
+</html>
