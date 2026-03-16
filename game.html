@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TAKO GAME - Infinite Luxury</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0f051d; color: #e2e8f0; min-height: 100vh; font-family: 'Kanit', sans-serif; }
+        * { font-style: normal !important; }
+        .glass { background: rgba(30, 10, 60, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+
+        /* グリッド設定 */
+        .grid-main { display: grid; gap: 16px; grid-template-columns: repeat(2, 1fr); }
+        @media (min-width: 768px) { .grid-main { grid-template-columns: repeat(4, 1fr); } }
+        @media (min-width: 1280px) { .grid-main { grid-template-columns: repeat(6, 1fr); } }
+
+        .top-pick-grid { display: grid; gap: 16px; grid-template-columns: repeat(2, 1fr); }
+        @media (min-width: 1024px) { 
+            .top-pick-grid { grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 180px); }
+            .giant-tile { grid-column: span 2; grid-row: span 2; }
+        }
+
+        .tile-wrapper { 
+            position: relative; width: 100%; border-radius: 1rem; overflow: hidden; 
+            background: #1e0a3c; transition: all 0.3s ease; cursor: pointer;
+        }
+        .tile-wrapper img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0; transition: opacity 0.5s ease; }
+        .tile-wrapper img.loaded { opacity: 1; }
+        .tile-wrapper:hover { transform: scale(1.02); outline: 3px solid #4edfff; z-index: 10; }
+
+        /* スケルトンアニメーション */
+        .skeleton {
+            background: linear-gradient(90deg, #1e0a3c 25%, #2d1354 50%, #1e0a3c 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        /* 各比率設定 */
+        .ratio-wide .tile-wrapper:not(.giant-tile) { aspect-ratio: 16 / 9; }
+        .ratio-standard .tile-wrapper { aspect-ratio: 16 / 10; }
+        .ratio-square .tile-wrapper { aspect-ratio: 1 / 1; }
+
+        .search-input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 0.6rem 1rem 0.6rem 2.5rem; border-radius: 2rem; outline: none; }
+        .search-input:focus { border-color: #4edfff; box-shadow: 0 0 15px rgba(78,223,255,0.3); }
+        .btn-more { font-size: 0.75rem; color: #4edfff; border: 1px solid #4edfff; padding: 2px 12px; border-radius: 20px; transition: 0.3s; }
+        .btn-more:hover { background: #4edfff; color: #000; }
+    </style>
+</head>
+<body>
+
+    <header class="sticky top-0 z-50 glass px-6 py-4">
+        <div class="container mx-auto flex justify-between items-center gap-6">
+            <a href="javascript:void(0)" onclick="location.reload()" class="flex items-center gap-3 shrink-0">
+                <img src="rogo.png" alt="LOGO" class="h-12 w-auto" onerror="this.src='https://via.placeholder.com/80?text=🐙';">
+                <div class="hidden sm:flex flex-col text-white leading-none font-black text-xl"><span>TAKO</span><span>GAME</span></div>
+            </a>
+            <div class="relative w-full max-w-[400px]">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 opacity-40">🔍</span>
+                <input type="text" id="search-input" class="search-input" placeholder="ゲームを検索..." oninput="debounceSearch(this.value)">
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <div id="player-section" class="hidden mb-12">
+            <div class="flex justify-between mb-4"><h2 id="current-title" class="text-2xl font-black text-white"></h2><button onclick="closeAllViews()" class="bg-white/10 px-5 py-2 rounded-xl">✕ 閉じる</button></div>
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <div class="lg:col-span-3 aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl"><iframe id="game-iframe" src="" class="w-full h-full" frameborder="0"></iframe></div>
+                <div class="lg:col-span-1 glass p-6 rounded-2xl"><img id="side-thumb" class="w-full rounded-xl mb-4 aspect-video object-cover"><div id="current-desc" class="text-sm text-gray-400 max-h-[400px] overflow-y-auto"></div></div>
+            </div>
+        </div>
+
+        <div id="category-view" class="hidden mb-12">
+            <div class="flex items-center justify-between mb-8"><h3 id="category-title" class="text-3xl font-black"></h3><button onclick="closeAllViews()" class="text-[#4edfff]">← ホームへ戻る</button></div>
+            <div id="category-grid" class="grid-main ratio-standard"></div>
+        </div>
+
+        <div id="default-sections">
+            <section class="mb-12 ratio-wide">
+                <div class="flex justify-between items-center mb-6"><h3 class="text-xl font-black border-l-4 border-[#4edfff] pl-3">トップ・ピック</h3><button class="btn-more" onclick="showCategory('トップ・ピック', 0, 50)">すべてを見る</button></div>
+                <div id="grid-top" class="top-pick-grid"></div>
+            </section>
+
+            <section class="mb-12 ratio-standard">
+                <div class="flex justify-between items-center mb-6"><h3 class="text-xl font-black border-l-4 border-[#a855f7] pl-3">注目のゲーム</h3><button class="btn-more" onclick="showCategory('注目のゲーム', 5, 100)">すべてを見る</button></div>
+                <div id="grid-featured" class="grid-main"></div>
+            </section>
+
+            <section class="mb-12 ratio-square">
+                <div class="flex justify-between items-center mb-6"><h3 class="text-xl font-black border-l-4 border-[#ec4899] pl-3">新作ゲーム</h3><button class="btn-more" onclick="showCategory('新作ゲーム', 30, 130)">すべてを見る</button></div>
+                <div id="grid-new" class="grid-main"></div>
+            </section>
+
+            <section class="mb-12 ratio-standard">
+                <div class="flex justify-between items-center mb-6"><h3 class="text-xl font-black border-l-4 border-gray-500 pl-3">おすすめを探索</h3></div>
+                <div id="grid-infinite" class="grid-main"></div>
+                <div id="load-more-trigger" class="flex justify-center py-12">
+                    <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-[#4edfff]"></div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        const API_URL = "https://gamemonetize.com/feed.php?format=0";
+        const TRANSLATE_API = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=";
+        const JP_TRANSLATE_API = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ja&dt=t&q=";
+        let allGames = [];
+        let displayCount = 0;
+        let searchTimeout;
+
+        async function init() {
+            // スケルトンを生成
+            createSkeletons('grid-top', 5);
+            createSkeletons('grid-featured', 12);
+            createSkeletons('grid-new', 12);
+
+            const res = await fetch(API_URL);
+            allGames = await res.json();
+            
+            renderHome();
+            setupInfiniteScroll();
+        }
+
+        function createSkeletons(id, count) {
+            const grid = document.getElementById(id);
+            for(let i=0; i<count; i++) {
+                const s = document.createElement('div');
+                s.className = `tile-wrapper skeleton ${id === 'grid-top' && i === 0 ? 'giant-tile' : ''}`;
+                grid.appendChild(s);
+            }
+        }
+
+        function renderHome() {
+            fillGrid('grid-top', allGames.slice(0, 5), true);
+            fillGrid('grid-featured', allGames.slice(5, 17));
+            fillGrid('grid-new', allGames.slice(17, 29));
+            displayCount = 29;
+        }
+
+        function fillGrid(id, games, isTop = false) {
+            const grid = document.getElementById(id);
+            grid.innerHTML = '';
+            games.forEach((game, i) => {
+                const wrap = document.createElement('div');
+                wrap.className = (isTop && i === 0) ? 'tile-wrapper giant-tile' : 'tile-wrapper';
+                wrap.onclick = () => playGame(game);
+                
+                const img = new Image();
+                img.src = game.thumb;
+                img.onload = () => img.classList.add('loaded');
+                wrap.appendChild(img);
+                grid.appendChild(wrap);
+            });
+        }
+
+        function setupInfiniteScroll() {
+            const observer = new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting) {
+                    const nextBatch = allGames.slice(displayCount, displayCount + 12);
+                    if (nextBatch.length > 0) {
+                        const infiniteGrid = document.getElementById('grid-infinite');
+                        nextBatch.forEach(game => {
+                            const wrap = document.createElement('div');
+                            wrap.className = 'tile-wrapper';
+                            wrap.onclick = () => playGame(game);
+                            const img = new Image();
+                            img.src = game.thumb;
+                            img.onload = () => img.classList.add('loaded');
+                            wrap.appendChild(img);
+                            infiniteGrid.appendChild(wrap);
+                        });
+                        displayCount += 12;
+                    }
+                }
+            }, { threshold: 0.1 });
+            observer.observe(document.getElementById('load-more-trigger'));
+        }
+
+        async function performSearch(query) {
+            if (!query) return closeAllViews();
+            let englishQuery = query;
+            try {
+                const res = await fetch(TRANSLATE_API + encodeURIComponent(query));
+                const json = await res.json();
+                englishQuery = json[0][0][0];
+            } catch (e) {}
+            const filtered = allGames.filter(g => g.title.toLowerCase().includes(englishQuery.toLowerCase()));
+            showCategory(`「${query}」の検索結果`, 0, 0, filtered);
+        }
+
+        function debounceSearch(val) {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => performSearch(val), 500);
+        }
+
+        function showCategory(title, start, end, customList = null) {
+            document.getElementById('default-sections').classList.add('hidden');
+            document.getElementById('player-section').classList.add('hidden');
+            const view = document.getElementById('category-view');
+            view.classList.remove('hidden');
+            document.getElementById('category-title').innerText = title;
+            fillGrid('category-grid', customList || allGames.slice(start, end));
+            window.scrollTo(0, 0);
+        }
+
+        function closeAllViews() {
+            document.getElementById('default-sections').classList.remove('hidden');
+            document.getElementById('category-view').classList.add('hidden');
+            document.getElementById('player-section').classList.add('hidden');
+            document.getElementById('game-iframe').src = "";
+        }
+
+        async function playGame(game) {
+            document.getElementById('player-section').classList.remove('hidden');
+            document.getElementById('game-iframe').src = game.url;
+            document.getElementById('side-thumb').src = game.thumb;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            const [t, d] = await Promise.all([
+                fetch(JP_TRANSLATE_API + encodeURIComponent(game.title)).then(r => r.json()),
+                fetch(JP_TRANSLATE_API + encodeURIComponent(game.description)).then(r => r.json())
+            ]);
+            document.getElementById('current-title').innerText = t[0].map(p => p[0]).join('');
+            document.getElementById('current-desc').innerText = d[0].map(p => p[0]).join('');
+        }
+
+        init();
+    </script>
+</body>
+</html>
